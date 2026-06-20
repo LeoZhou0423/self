@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap');
+
+:root {
+  --bg-primary: #F7F5F2;
+  --bg-card: #FFFFFF;
+  --text-primary: #3D352E;
+  --text-secondary: #6B7D8C;
+  --accent-primary: #C67B5C;
+  --accent-success: #7A8B6E;
+  --border-color: rgba(61, 53, 46, 0.12);
+  --shadow: 0 4px 24px rgba(61, 53, 46, 0.08);
+}
+
+.dark {
+  --bg-primary: #1F1C19;
+  --bg-card: #2A2522;
+  --text-primary: #F0EBE5;
+  --text-secondary: #A9A099;
+  --accent-primary: #D99577;
+  --accent-success: #94A788;
+  --border-color: rgba(240, 235, 229, 0.12);
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.font-display {
+  font-family: "Noto Serif SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Focus ring */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
