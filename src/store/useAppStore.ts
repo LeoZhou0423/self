@@ -12,6 +12,14 @@ export interface TestRecord {
 export interface AppSettings {
   darkMode: boolean;
   fontSize: 'small' | 'medium' | 'large';
+  aiConfig: {
+    enabled: boolean;
+    proxyMode: 'direct' | 'worker';
+    baseUrl: string;
+    apiKey: string;
+    model: string;
+    workerUrl: string;
+  };
 }
 
 interface AppState {
@@ -41,6 +49,14 @@ export const useAppStore = create<AppState>()(
       settings: {
         darkMode: false,
         fontSize: 'medium',
+        aiConfig: {
+          enabled: false,
+          proxyMode: 'worker',
+          baseUrl: 'https://token-plan-cn.xiaomimimo.com/v1',
+          apiKey: '',
+          model: 'mimo-v2.5-pro',
+          workerUrl: '',
+        },
       },
 
       setAnswer: (questionId, value) =>

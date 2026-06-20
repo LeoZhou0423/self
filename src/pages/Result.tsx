@@ -19,6 +19,9 @@ import {
   User,
   Lightbulb,
   AlertTriangle,
+  Bot,
+  Loader2,
+  Settings,
 } from 'lucide-react';
 import { RadarChart } from '@/components/RadarChart';
 import { DomainCard } from '@/components/DomainCard';
@@ -27,6 +30,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { DOMAINS, FACETS, type Domain } from '@/data/questions';
 import { buildPersonalityModel, type PersonalityModel, type FacetProfile } from '@/utils/scoring';
 import { exportElementToImage, exportElementToPDF, shareElementImage } from '@/utils/export';
+import { generateAIInterpretation } from '@/utils/aiInterpretation';
 
 const DOMAIN_ORDER: Domain[] = ['O', 'C', 'E', 'A', 'N'];
 
@@ -107,10 +111,13 @@ function FacetBar({ profile }: { profile: FacetProfile }) {
 export function Result() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { history, clearCurrentAnswers } = useAppStore();
+  const { history, clearCurrentAnswers, settings } = useAppStore();
   const reportRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('profile');
+  const [aiContent, setAiContent] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
 
   const record = id ? history.find((r) => r.id === id) : history[0];
 
@@ -163,6 +170,24 @@ export function Result() {
   const handleRetake = () => {
     clearCurrentAnswers();
     navigate('/quiz');
+  };
+
+  const handleAIInterpret = async () => {
+    if (aiLoading) return;
+    setAiContent('');
+    setAiError('');
+    setAiLoading(true);
+
+    await generateAIInterpretation({
+      model,
+      settings: settings.aiConfig,
+      onChunk: (chunk) => setAiContent((prev) => prev + chunk),
+      onError: (err) => {
+        setAiError(err);
+        setAiLoading(false);
+      },
+      onDone: () => setAiLoading(false),
+    });
   };
 
   const tabs: { key: TabKey; label: string; icon: typeof Star }[] = [
@@ -591,6 +616,64 @@ export function Result() {
             <p className="mt-4 text-sm leading-relaxed sm:mt-6 sm:text-base">
               {model.archetype.description}
             </p>
+
+            {/* ── AI 深度解读 ── */}
+            <div className="mt-4 border-2 border-[var(--accent-blue)] bg-[var(--accent-blue)]/5 p-4 sm:mt-6 sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <Bot size={18} className="text-[var(--accent-blue)]" />
+                  <h3 className="font-display text-sm font-bold uppercase text-[var(--accent-blue)] sm:text-base">
+                    AI 深度解读
+                  </h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!settings.aiConfig.enabled && (
+                    <span className="text-[10px] text-[var(--text-secondary)] sm:text-xs">
+                      未配置
+                    </span>
+                  )}
+                  <button
+                    onClick={() => navigate('/settings')}
+                    className="flex items-center gap-1 border-2 border-[var(--border-color)] bg-[var(--bg-card)] px-2 py-1 text-[10px] font-bold uppercase transition-colors hover:bg-[var(--bg-primary)] sm:text-xs"
+                  >
+                    <Settings size={12} />
+                    配置
+                  </button>
+                  <button
+                    onClick={handleAIInterpret}
+                    disabled={aiLoading || !settings.aiConfig.enabled}
+                    className="flex items-center gap-1 border-2 border-[var(--accent-blue)] bg-[var(--accent-blue)] px-3 py-1 text-[10px] font-bold uppercase text-white transition-colors hover:bg-[var(--accent-blue)]/90 disabled:opacity-50 sm:text-xs"
+                  >
+                    {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    {aiLoading ? '生成中...' : '生成解读'}
+                  </button>
+                </div>
+              </div>
+
+              {!settings.aiConfig.enabled && (
+                <p className="mt-3 text-xs text-[var(--text-secondary)]">
+                  前往设置页配置 MiMo Token Plan 后，即可生成由 AI 撰写的深度人格解读。
+                </p>
+              )}
+
+              {aiError && (
+                <div className="mt-3 flex items-start gap-2 border-2 border-[var(--accent-red)] bg-red-50 p-2 text-xs text-[var(--accent-red)] dark:bg-red-950/10 sm:text-sm">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                  {aiError}
+                </div>
+              )}
+
+              {(aiContent || aiLoading) && (
+                <div className="mt-4 border-l-2 border-[var(--accent-blue)] bg-[var(--bg-card)] p-3 sm:p-4">
+                  <div className="prose prose-sm max-w-none text-sm leading-relaxed">
+                    {aiContent}
+                    {aiLoading && (
+                      <span className="ml-1 inline-block h-4 w-1 animate-pulse bg-[var(--accent-blue)]" />
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* ── 主导特质标签 ── */}
             <div className="mt-4 sm:mt-6">
