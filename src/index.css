@@ -1,0 +1,166 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #F4F4F4;
+  --bg-card: #FFFFFF;
+  --bg-alt: #1A1A1A;
+  --text-primary: #1A1A1A;
+  --text-secondary: #8C8C8C;
+  --text-inverse: #F4F4F4;
+  --accent-red: #D92929;
+  --accent-yellow: #F2B705;
+  --accent-blue: #2E5BFF;
+  --border-color: #1A1A1A;
+  --shadow: 8px 8px 0px #1A1A1A;
+  --shadow-sm: 4px 4px 0px #1A1A1A;
+}
+
+.dark {
+  --bg-primary: #1A1A1A;
+  --bg-card: #2A2A2A;
+  --bg-alt: #F4F4F4;
+  --text-primary: #F4F4F4;
+  --text-secondary: #8C8C8C;
+  --text-inverse: #1A1A1A;
+  --accent-red: #FF4D4D;
+  --accent-yellow: #FFD93D;
+  --accent-blue: #5B82FF;
+  --border-color: #F4F4F4;
+  --shadow: 8px 8px 0px #F4F4F4;
+  --shadow-sm: 4px 4px 0px #F4F4F4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.font-display {
+  font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Bauhaus utility classes */
+.bauhaus-card {
+  background: var(--bg-card);
+  border: 3px solid var(--border-color);
+  box-shadow: var(--shadow);
+}
+
+.bauhaus-card-sm {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.bauhaus-btn {
+  background: var(--accent-blue);
+  color: white;
+  border: 3px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.15s ease;
+}
+
+.bauhaus-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--border-color);
+}
+
+.bauhaus-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px var(--border-color);
+}
+
+.bauhaus-btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 3px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.15s ease;
+}
+
+.bauhaus-btn-secondary:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--border-color);
+}
+
+.bauhaus-btn-red {
+  background: var(--accent-red);
+}
+
+.bauhaus-btn-yellow {
+  background: var(--accent-yellow);
+  color: var(--text-primary);
+}
+
+/* Geometric decorations */
+.geo-circle {
+  border-radius: 50%;
+}
+
+.geo-triangle {
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-secondary);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-primary);
+}
+
+/* Focus ring */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
