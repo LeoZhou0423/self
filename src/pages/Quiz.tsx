@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { OPTIONS, QUESTIONS, DOMAINS, type Domain } from '@/data/questions';
+import { OPTIONS, QUESTIONS, LIE_SCALE_QUESTIONS, DOMAINS, type Domain } from '@/data/questions';
 import { useAppStore } from '@/store/useAppStore';
 import { isComplete } from '@/utils/scoring';
 
@@ -13,6 +13,18 @@ const DOMAIN_COLORS: Record<Domain, string> = {
   N: '#A65D57',
 };
 
+// Combine main questions with lie scale questions
+const ALL_QUESTIONS = [
+  ...QUESTIONS,
+  ...LIE_SCALE_QUESTIONS.map((q) => ({
+    id: q.id,
+    text: q.text,
+    domain: 'L' as Domain,
+    facet: 'social_desirability',
+    reverse: q.reverse,
+  })),
+];
+
 export function Quiz() {
   const navigate = useNavigate();
   const { currentAnswers, setAnswer, clearCurrentAnswers, submitTest } = useAppStore();
@@ -20,21 +32,21 @@ export function Quiz() {
   const [direction, setDirection] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
 
-  const question = QUESTIONS[currentIndex];
+  const question = ALL_QUESTIONS[currentIndex];
   const selected = currentAnswers[question.id];
-  const progress = ((currentIndex + 1) / QUESTIONS.length) * 100;
+  const progress = ((currentIndex + 1) / ALL_QUESTIONS.length) * 100;
 
   // Domain progress tracking
   const domainProgress = useMemo(() => {
     const domains: Domain[] = ['O', 'C', 'E', 'A', 'N'];
     return domains.map((domain) => {
-      const domainQuestions = QUESTIONS.filter((q) => q.domain === domain);
+      const domainQuestions = ALL_QUESTIONS.filter((q) => q.domain === domain);
       const answered = domainQuestions.filter((q) => currentAnswers[q.id] !== undefined).length;
       return {
         domain,
         total: domainQuestions.length,
         answered,
-        percentage: (answered / domainQuestions.length) * 100,
+        percentage: domainQuestions.length > 0 ? (answered / domainQuestions.length) * 100 : 0,
         color: DOMAIN_COLORS[domain],
       };
     });
@@ -45,7 +57,7 @@ export function Quiz() {
       if (e.key >= '1' && e.key <= '5') {
         setAnswer(question.id, parseInt(e.key, 10));
         setShowWarning(false);
-        if (currentIndex < QUESTIONS.length - 1) {
+        if (currentIndex < ALL_QUESTIONS.length - 1) {
           setTimeout(() => {
             setDirection(1);
             setCurrentIndex((i) => i + 1);
@@ -67,7 +79,7 @@ export function Quiz() {
   const handleSelect = (value: number) => {
     setAnswer(question.id, value);
     setShowWarning(false);
-    if (currentIndex < QUESTIONS.length - 1) {
+    if (currentIndex < ALL_QUESTIONS.length - 1) {
       setTimeout(() => {
         setDirection(1);
         setCurrentIndex((i) => i + 1);
@@ -87,7 +99,7 @@ export function Quiz() {
       setShowWarning(true);
       return;
     }
-    if (currentIndex < QUESTIONS.length - 1) {
+    if (currentIndex < ALL_QUESTIONS.length - 1) {
       setDirection(1);
       setCurrentIndex((i) => i + 1);
     } else {
@@ -119,7 +131,7 @@ export function Quiz() {
         <div className="mb-8">
           <div className="flex items-center justify-between font-display text-sm font-bold uppercase tracking-wide">
             <div className="flex items-center gap-2">
-              <span>第 {currentIndex + 1} / {QUESTIONS.length} 题</span>
+              <span>第 {currentIndex + 1} / {ALL_QUESTIONS.length} 题</span>
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold border-2 border-[var(--border-color)]"
                 style={{ backgroundColor: DOMAIN_COLORS[question.domain] + '20', color: DOMAIN_COLORS[question.domain] }}
@@ -234,7 +246,7 @@ export function Quiz() {
               重新开始
             </button>
 
-            {currentIndex < QUESTIONS.length - 1 ? (
+            {currentIndex < ALL_QUESTIONS.length - 1 ? (
               <button
                 onClick={handleNext}
                 className="bauhaus-btn flex items-center gap-2 px-5 py-3"

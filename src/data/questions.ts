@@ -227,6 +227,15 @@ export const QUESTIONS: Question[] = [
   { id: 60, text: '我的情绪通常比较稳定。', domain: 'N', facet: 'volatility', reverse: true },
 ];
 
+// Social Desirability Scale (Lie Scale) - 检测社会期许效应
+// 这些题目用于识别用户是否在"表演"理想自我
+export const LIE_SCALE_QUESTIONS: { id: number; text: string; reverse: boolean }[] = [
+  { id: 61, text: '我从不说谎。', reverse: false },
+  { id: 62, text: '我总是信守承诺，从不食言。', reverse: false },
+  { id: 63, text: '我从来没有说过别人坏话。', reverse: false },
+  { id: 64, text: '我总是把别人的需求放在自己之前。', reverse: false },
+];
+
 export const OPTIONS = [
   { value: 1, label: '非常不同意' },
   { value: 2, label: '不同意' },

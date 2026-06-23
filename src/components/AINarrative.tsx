@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAppStore } from '@/store/useAppStore';
-import { streamAIAnalysis } from '@/utils/ai';
+import { streamAIAnalysis, analyzeScores } from '@/utils/ai';
 import type { DomainScores } from '@/utils/scoring';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +17,8 @@ export function AINarrative({ scores, className }: AINarrativeProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const analysis = useMemo(() => analyzeScores(scores), [scores]);
 
   const startStream = useCallback(async () => {
     if (!settings.mimoApiKey) {
@@ -72,6 +74,29 @@ export function AINarrative({ scores, className }: AINarrativeProps) {
 
   return (
     <div className={cn('bauhaus-card-sm p-5 sm:p-6', className)}>
+      {/* Retest warning */}
+      {analysis.retestMessage && (
+        <div className={cn(
+          'mb-4 p-4 border-2',
+          analysis.hasRetestAdvice
+            ? 'border-[var(--accent-yellow)] bg-yellow-50 dark:bg-yellow-950/20'
+            : 'border-[var(--accent-blue)] bg-blue-50 dark:bg-blue-950/20'
+        )}>
+          <div className="flex items-start gap-2">
+            <AlertTriangle
+              size={18}
+              className={cn(
+                'mt-0.5 shrink-0',
+                analysis.hasRetestAdvice ? 'text-[var(--accent-yellow)]' : 'text-[var(--accent-blue)]'
+              )}
+            />
+            <p className="text-sm leading-relaxed text-[var(--text-primary)]">
+              {analysis.retestMessage}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="font-display text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
