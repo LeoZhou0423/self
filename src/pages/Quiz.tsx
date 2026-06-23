@@ -5,12 +5,13 @@ import { OPTIONS, QUESTIONS, LIE_SCALE_QUESTIONS, DOMAINS, type Domain } from '@
 import { useAppStore } from '@/store/useAppStore';
 import { isComplete } from '@/utils/scoring';
 
-const DOMAIN_COLORS: Record<Domain, string> = {
+const DOMAIN_COLORS: Record<string, string> = {
   O: '#8E6EAB',
   C: '#4A7C59',
   E: '#D4A017',
   A: '#5B8A72',
   N: '#A65D57',
+  L: '#8C8C8C',
 };
 
 // Combine main questions with lie scale questions
@@ -136,7 +137,7 @@ export function Quiz() {
                 className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold border-2 border-[var(--border-color)]"
                 style={{ backgroundColor: DOMAIN_COLORS[question.domain] + '20', color: DOMAIN_COLORS[question.domain] }}
               >
-                {DOMAINS[question.domain].name}
+                {DOMAINS[question.domain]?.name ?? '信度量表'}
               </span>
             </div>
             <span className="text-[var(--text-secondary)]">
@@ -157,7 +158,7 @@ export function Quiz() {
               >
                 {/* Tooltip on hover */}
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium bg-[var(--bg-alt)] text-[var(--text-inverse)] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  {DOMAINS[dp.domain].name}: {dp.answered}/{dp.total}
+                  {DOMAINS[dp.domain]?.name ?? dp.domain}: {dp.answered}/{dp.total}
                 </div>
               </div>
             ))}
@@ -176,7 +177,7 @@ export function Quiz() {
                   className="inline-block w-2 h-2 rounded-full"
                   style={{ backgroundColor: dp.color }}
                 />
-                {DOMAINS[dp.domain].name}
+                {DOMAINS[dp.domain]?.name ?? dp.domain}
               </span>
             ))}
           </div>
