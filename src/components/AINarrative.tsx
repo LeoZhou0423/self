@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { useAppStore } from '@/store/useAppStore';
 import { streamAIAnalysis } from '@/utils/ai';
 import type { DomainScores } from '@/utils/scoring';
@@ -51,130 +52,6 @@ export function AINarrative({ scores, className }: AINarrativeProps) {
     }
   }, [settings.mimoApiKey, content, isLoading, error, startStream]);
 
-  // Parse markdown content
-  const renderContent = (text: string) => {
-    const lines = text.split('\n');
-    const elements: React.ReactNode[] = [];
-    let currentList: string[] = [];
-
-    const flushList = () => {
-      if (currentList.length > 0) {
-        elements.push(
-          <ul key={`list-${elements.length}`} className="list-disc pl-5 space-y-1 my-2">
-            {currentList.map((item, idx) => (
-              <li key={idx} className="text-sm leading-relaxed sm:text-base">
-                {renderInline(item)}
-              </li>
-            ))}
-          </ul>
-        );
-        currentList = [];
-      }
-    };
-
-    const renderInline = (line: string) => {
-      // Handle bold, italic, and inline code
-      const parts: React.ReactNode[] = [];
-      let remaining = line;
-      let key = 0;
-
-      while (remaining.length > 0) {
-        // Bold: **text**
-        const boldMatch = remaining.match(/^(.*?)\*\*(.*?)\*\*(.*)/s);
-        if (boldMatch) {
-          if (boldMatch[1]) parts.push(boldMatch[1]);
-          parts.push(
-            <strong key={key++} className="font-semibold text-[var(--text-primary)]">
-              {boldMatch[2]}
-            </strong>
-          );
-          remaining = boldMatch[3];
-          continue;
-        }
-
-        // Italic: *text*
-        const italicMatch = remaining.match(/^(.*?)\*(.*?)\*(.*)/s);
-        if (italicMatch) {
-          if (italicMatch[1]) parts.push(italicMatch[1]);
-          parts.push(
-            <em key={key++} className="italic">{italicMatch[2]}</em>
-          );
-          remaining = italicMatch[3];
-          continue;
-        }
-
-        // No more formatting
-        parts.push(remaining);
-        break;
-      }
-
-      return parts.length === 1 ? parts[0] : parts;
-    };
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const trimmed = line.trim();
-
-      // Empty line
-      if (trimmed === '') {
-        flushList();
-        continue;
-      }
-
-      // Header: ## text
-      if (trimmed.startsWith('## ')) {
-        flushList();
-        elements.push(
-          <h3
-            key={`h3-${i}`}
-            className="font-display text-lg font-bold uppercase tracking-wide mt-6 first:mt-0 mb-2 sm:text-xl"
-          >
-            {trimmed.slice(3)}
-          </h3>
-        );
-        continue;
-      }
-
-      // Subheader: ### text
-      if (trimmed.startsWith('### ')) {
-        flushList();
-        elements.push(
-          <h4
-            key={`h4-${i}`}
-            className="font-display text-base font-bold uppercase tracking-wide mt-4 mb-1 sm:text-lg"
-          >
-            {trimmed.slice(4)}
-          </h4>
-        );
-        continue;
-      }
-
-      // List item: - text or * text
-      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-        currentList.push(trimmed.slice(2));
-        continue;
-      }
-
-      // Numbered list: 1. text
-      const numberedListMatch = trimmed.match(/^\d+\.\s+(.*)/);
-      if (numberedListMatch) {
-        currentList.push(numberedListMatch[1]);
-        continue;
-      }
-
-      // Regular paragraph
-      flushList();
-      elements.push(
-        <p key={`p-${i}`} className="text-sm leading-relaxed sm:text-base my-2">
-          {renderInline(trimmed)}
-        </p>
-      );
-    }
-
-    flushList(); // Flush any remaining list items
-    return elements;
-  };
-
   if (!settings.mimoApiKey) {
     return (
       <div className={cn('bauhaus-card-sm p-5 sm:p-6', className)}>
@@ -221,8 +98,18 @@ export function AINarrative({ scores, className }: AINarrativeProps) {
         </div>
       )}
 
-      <div className="space-y-2 text-[var(--text-secondary)]">
-        {renderContent(content)}
+      <div className="prose prose-sm max-w-none dark:prose-invert
+        prose-headings:font-display prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wide
+        prose-h2:text-lg prose-h2:mt-6 prose-h2:mb-2
+        prose-h3:text-base prose-h3:mt-4 prose-h3:mb-1
+        prose-p:text-sm prose-p:leading-relaxed prose-p:my-2
+        prose-strong:font-semibold prose-strong:text-[var(--text-primary)]
+        prose-ul:list-disc prose-ul:pl-5 prose-ul:my-2
+        prose-ol:my-2
+        prose-li:text-sm prose-li:leading-relaxed
+        text-[var(--text-secondary)]
+      ">
+        <ReactMarkdown>{content}</ReactMarkdown>
         {isLoading && (
           <span className="inline-block w-[2px] h-[1em] bg-[var(--accent-blue)] animate-pulse ml-[1px] align-text-bottom" />
         )}
