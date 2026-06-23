@@ -9,6 +9,7 @@ export function Settings() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState(settings.mimoApiKey);
   const [baseUrlInput, setBaseUrlInput] = useState(settings.mimoBaseUrl);
+  const [corsProxyInput, setCorsProxyInput] = useState(settings.corsProxy);
 
   const handleExportData = () => {
     exportDataToJSON(
@@ -150,6 +151,28 @@ export function Settings() {
                       保存
                     </button>
                   </div>
+                </div>
+
+                <div className="mt-4">
+                  <p className="text-xs text-[var(--text-secondary)]">CORS 代理（解决跨域问题）</p>
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="text"
+                      value={corsProxyInput}
+                      onChange={(e) => setCorsProxyInput(e.target.value)}
+                      placeholder="https://corsproxy.io/?"
+                      className="flex-1 border-2 border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2 text-sm"
+                    />
+                    <button
+                      onClick={() => updateSettings({ corsProxy: corsProxyInput })}
+                      className="bauhaus-btn-secondary px-4 py-2 text-sm"
+                    >
+                      保存
+                    </button>
+                  </div>
+                  <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                    留空则直连 API（需 API 支持 CORS）
+                  </p>
                 </div>
 
                 {settings.mimoApiKey && (

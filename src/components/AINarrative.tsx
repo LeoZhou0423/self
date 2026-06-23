@@ -33,6 +33,7 @@ export function AINarrative({ scores, className }: AINarrativeProps) {
     await streamAIAnalysis(scores, {
       apiKey: settings.mimoApiKey,
       baseUrl: settings.mimoBaseUrl || 'https://api.mimo.ai/v1',
+      corsProxy: settings.corsProxy || 'https://corsproxy.io/?',
       onToken: (token) => {
         setContent((prev) => prev + token);
       },

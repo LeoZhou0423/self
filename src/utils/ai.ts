@@ -4,6 +4,7 @@ import type { Domain } from '@/data/questions';
 export interface AIStreamOptions {
   apiKey: string;
   baseUrl: string;
+  corsProxy?: string;
   onToken: (token: string) => void;
   onComplete: () => void;
   onError: (error: Error) => void;
@@ -193,7 +194,7 @@ export async function streamAIAnalysis(
   scores: DomainScores,
   options: AIStreamOptions
 ): Promise<void> {
-  const { apiKey, baseUrl, onToken, onComplete, onError } = options;
+  const { apiKey, baseUrl, corsProxy, onToken, onComplete, onError } = options;
 
   if (!apiKey) {
     onError(new Error('请先在设置中配置 API Key'));
@@ -203,8 +204,13 @@ export async function streamAIAnalysis(
   const analysis = analyzeScores(scores);
   const prompt = buildPrompt(scores, analysis);
 
+  // Build the API URL, optionally using CORS proxy
+  const apiUrl = corsProxy
+    ? `${corsProxy}${encodeURIComponent(`${baseUrl}/chat/completions`)}`
+    : `${baseUrl}/chat/completions`;
+
   try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

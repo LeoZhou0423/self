@@ -14,6 +14,7 @@ export interface AppSettings {
   fontSize: 'small' | 'medium' | 'large';
   mimoApiKey: string;
   mimoBaseUrl: string;
+  corsProxy: string;
 }
 
 interface AppState {
@@ -45,6 +46,7 @@ export const useAppStore = create<AppState>()(
         fontSize: 'medium',
         mimoApiKey: '',
         mimoBaseUrl: 'https://api.mimo.ai/v1',
+        corsProxy: 'https://corsproxy.io/?',
       },
 
       setAnswer: (questionId, value) =>
