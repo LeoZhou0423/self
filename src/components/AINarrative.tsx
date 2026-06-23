@@ -23,8 +23,9 @@ export function AINarrative({ scores, recordId, savedNarrative, className }: AIN
   const analysis = useMemo(() => analyzeScores(scores), [scores]);
 
   const startStream = useCallback(async () => {
-    if (!settings.mimoApiKey) {
-      setError('请先在设置中配置 Mimo API Key');
+    const currentApiKey = settings.aiProvider === 'kimi' ? settings.kimiApiKey : settings.mimoApiKey;
+    if (!currentApiKey) {
+      setError('请先在设置中配置 API Key');
       return;
     }
 
@@ -36,8 +37,9 @@ export function AINarrative({ scores, recordId, savedNarrative, className }: AIN
     let fullContent = '';
 
     await streamAIAnalysis(scores, {
-      apiKey: settings.mimoApiKey,
-      baseUrl: settings.mimoBaseUrl || 'https://token-plan-cn.xiaomimimo.com/v1',
+      provider: settings.aiProvider || 'mimo',
+      apiKey: settings.aiProvider === 'kimi' ? settings.kimiApiKey : settings.mimoApiKey,
+      baseUrl: settings.aiProvider === 'kimi' ? 'https://api.kimi.com/coding/v1' : (settings.mimoBaseUrl || 'https://token-plan-cn.xiaomimimo.com/v1'),
       corsProxy: settings.corsProxy || undefined,
       onToken: (token) => {
         fullContent += token;
@@ -60,12 +62,15 @@ export function AINarrative({ scores, recordId, savedNarrative, className }: AIN
 
   // 如果有已保存的解读，不自动开始
   useEffect(() => {
-    if (settings.mimoApiKey && !content && !isLoading && !error && !savedNarrative) {
+    const currentApiKey = settings.aiProvider === 'kimi' ? settings.kimiApiKey : settings.mimoApiKey;
+    if (currentApiKey && !content && !isLoading && !error && !savedNarrative) {
       startStream();
     }
-  }, [settings.mimoApiKey, content, isLoading, error, savedNarrative, startStream]);
+  }, [settings.aiProvider, settings.mimoApiKey, settings.kimiApiKey, content, isLoading, error, savedNarrative, startStream]);
 
-  if (!settings.mimoApiKey) {
+  const currentApiKey = settings.aiProvider === 'kimi' ? settings.kimiApiKey : settings.mimoApiKey;
+
+  if (!currentApiKey) {
     return (
       <div className={cn('bauhaus-card-sm p-5 sm:p-6', className)}>
         <p className="font-display text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">

@@ -2,6 +2,7 @@ import type { DomainScores } from './scoring';
 import type { Domain } from '@/data/questions';
 
 export interface AIStreamOptions {
+  provider: 'mimo' | 'kimi';
   apiKey: string;
   baseUrl: string;
   corsProxy?: string;
@@ -194,7 +195,7 @@ export async function streamAIAnalysis(
   scores: DomainScores,
   options: AIStreamOptions
 ): Promise<void> {
-  const { apiKey, baseUrl, corsProxy, onToken, onComplete, onError } = options;
+  const { provider, apiKey, baseUrl, corsProxy, onToken, onComplete, onError } = options;
 
   if (!apiKey) {
     onError(new Error('请先在设置中配置 API Key'));
@@ -209,6 +210,9 @@ export async function streamAIAnalysis(
     ? `${corsProxy}${encodeURIComponent(`${baseUrl}/chat/completions`)}`
     : `${baseUrl}/chat/completions`;
 
+  // Select model based on provider
+  const model = provider === 'kimi' ? 'kimi-latest' : 'mimo-v2-pro';
+
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -217,7 +221,7 @@ export async function streamAIAnalysis(
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'mimo-v2-pro',
+        model: model,
         messages: [
           {
             role: 'system',

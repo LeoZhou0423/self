@@ -8,6 +8,7 @@ export function Settings() {
   const { settings, updateSettings, history, clearHistory } = useAppStore();
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState(settings.mimoApiKey);
+  const [kimiApiKeyInput, setKimiApiKeyInput] = useState(settings.kimiApiKey);
   const [baseUrlInput, setBaseUrlInput] = useState(settings.mimoBaseUrl);
   const [corsProxyInput, setCorsProxyInput] = useState(settings.corsProxy);
 
@@ -106,54 +107,102 @@ export function Settings() {
             <div className="flex items-start gap-3">
               <Key size={20} className="mt-0.5" />
               <div className="flex-1">
-                <p className="font-medium">Mimo API Key</p>
+                {/* Provider Selection */}
+                <p className="font-medium">AI 提供商</p>
                 <p className="text-xs text-[var(--text-secondary)]">
-                  用于 AI 深度解读功能，支持流式输出
+                  选择用于 AI 深度解读的服务
                 </p>
-                <div className="mt-4 flex gap-2">
-                  <div className="relative flex-1">
-                    <input
-                      type={showApiKey ? 'text' : 'password'}
-                      value={apiKeyInput}
-                      onChange={(e) => setApiKeyInput(e.target.value)}
-                      placeholder="输入你的 Mimo API Key"
-                      className="w-full border-2 border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2 pr-10 text-sm"
-                    />
-                    <button
-                      onClick={() => setShowApiKey(!showApiKey)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                    >
-                      {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
+                <div className="mt-3 flex gap-3">
                   <button
-                    onClick={() => updateSettings({ mimoApiKey: apiKeyInput })}
-                    className="bauhaus-btn-secondary px-4 py-2 text-sm"
+                    onClick={() => updateSettings({ aiProvider: 'mimo' })}
+                    className={`flex-1 border-2 py-2 text-sm font-medium transition-colors ${
+                      settings.aiProvider === 'mimo'
+                        ? 'border-[var(--border-color)] bg-[var(--bg-alt)] text-[var(--text-inverse)]'
+                        : 'border-[var(--border-color)] bg-[var(--bg-card)] hover:bg-[var(--bg-primary)]'
+                    }`}
                   >
-                    保存
+                    Mimo
+                  </button>
+                  <button
+                    onClick={() => updateSettings({ aiProvider: 'kimi' })}
+                    className={`flex-1 border-2 py-2 text-sm font-medium transition-colors ${
+                      settings.aiProvider === 'kimi'
+                        ? 'border-[var(--border-color)] bg-[var(--bg-alt)] text-[var(--text-inverse)]'
+                        : 'border-[var(--border-color)] bg-[var(--bg-card)] hover:bg-[var(--bg-primary)]'
+                    }`}
+                  >
+                    Kimi
                   </button>
                 </div>
 
-                <div className="mt-4">
-                  <p className="text-xs text-[var(--text-secondary)]">API Base URL</p>
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      type="text"
-                      value={baseUrlInput}
-                      onChange={(e) => setBaseUrlInput(e.target.value)}
-                      placeholder="https://api.mimo.ai/v1"
-                      className="flex-1 border-2 border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2 text-sm"
-                    />
-                    <button
-                      onClick={() => updateSettings({ mimoBaseUrl: baseUrlInput })}
-                      className="bauhaus-btn-secondary px-4 py-2 text-sm"
-                    >
-                      保存
-                    </button>
+                {/* Mimo API Key */}
+                {settings.aiProvider === 'mimo' && (
+                  <div className="mt-5">
+                    <p className="font-medium">Mimo API Key</p>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      token-plan-cn.xiaomimimo.com
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type={showApiKey ? 'text' : 'password'}
+                          value={apiKeyInput}
+                          onChange={(e) => setApiKeyInput(e.target.value)}
+                          placeholder="输入你的 Mimo API Key"
+                          className="w-full border-2 border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2 pr-10 text-sm"
+                        />
+                        <button
+                          onClick={() => setShowApiKey(!showApiKey)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        >
+                          {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => updateSettings({ mimoApiKey: apiKeyInput })}
+                        className="bauhaus-btn-secondary px-4 py-2 text-sm"
+                      >
+                        保存
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="mt-4">
+                {/* Kimi API Key */}
+                {settings.aiProvider === 'kimi' && (
+                  <div className="mt-5">
+                    <p className="font-medium">Kimi API Key</p>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      api.kimi.com/coding/v1
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type={showApiKey ? 'text' : 'password'}
+                          value={kimiApiKeyInput}
+                          onChange={(e) => setKimiApiKeyInput(e.target.value)}
+                          placeholder="输入你的 Kimi API Key"
+                          className="w-full border-2 border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2 pr-10 text-sm"
+                        />
+                        <button
+                          onClick={() => setShowApiKey(!showApiKey)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        >
+                          {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => updateSettings({ kimiApiKey: kimiApiKeyInput })}
+                        className="bauhaus-btn-secondary px-4 py-2 text-sm"
+                      >
+                        保存
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* CORS Proxy */}
+                <div className="mt-5">
                   <p className="text-xs text-[var(--text-secondary)]">CORS 代理（解决跨域问题）</p>
                   <div className="mt-2 flex gap-2">
                     <input
@@ -175,7 +224,9 @@ export function Settings() {
                   </p>
                 </div>
 
-                {settings.mimoApiKey && (
+                {/* Status */}
+                {((settings.aiProvider === 'mimo' && settings.mimoApiKey) ||
+                  (settings.aiProvider === 'kimi' && settings.kimiApiKey)) && (
                   <p className="mt-3 text-xs text-emerald-600">
                     ✓ API Key 已配置，AI 深度解读功能可用
                   </p>

@@ -13,8 +13,10 @@ export interface TestRecord {
 export interface AppSettings {
   darkMode: boolean;
   fontSize: 'small' | 'medium' | 'large';
+  aiProvider: 'mimo' | 'kimi';
   mimoApiKey: string;
   mimoBaseUrl: string;
+  kimiApiKey: string;
   corsProxy: string;
 }
 
@@ -46,8 +48,10 @@ export const useAppStore = create<AppState>()(
       settings: {
         darkMode: false,
         fontSize: 'medium',
+        aiProvider: 'mimo',
         mimoApiKey: '',
         mimoBaseUrl: 'https://token-plan-cn.xiaomimimo.com/v1',
+        kimiApiKey: '',
         corsProxy: '',
       },
 
