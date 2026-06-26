@@ -22,9 +22,11 @@ export function AINarrative({ scores, recordId, savedNarrative, className }: AIN
 
   const analysis = useMemo(() => analyzeScores(scores), [scores]);
 
+  const isConfigured = !!(settings.proxyUrl || settings.deepseekApiKey);
+
   const startStream = useCallback(async () => {
-    if (!settings.deepseekApiKey) {
-      setError('请先在设置中配置 API Key');
+    if (!isConfigured) {
+      setError('请先在设置中配置 AI');
       return;
     }
 
@@ -36,7 +38,8 @@ export function AINarrative({ scores, recordId, savedNarrative, className }: AIN
     let fullContent = '';
 
     await streamAIAnalysis(scores, {
-      apiKey: settings.deepseekApiKey,
+      proxyUrl: settings.proxyUrl || undefined,
+      apiKey: settings.deepseekApiKey || undefined,
       corsProxy: settings.corsProxy || undefined,
       onToken: (token) => {
         fullContent += token;
@@ -55,16 +58,16 @@ export function AINarrative({ scores, recordId, savedNarrative, className }: AIN
         setIsLoading(false);
       },
     });
-  }, [scores, settings.deepseekApiKey, settings.corsProxy, recordId, saveNarrative]);
+  }, [scores, settings.proxyUrl, settings.deepseekApiKey, settings.corsProxy, recordId, saveNarrative, isConfigured]);
 
   // 如果有已保存的解读，不自动开始
   useEffect(() => {
-    if (settings.deepseekApiKey && !content && !isLoading && !error && !savedNarrative) {
+    if (isConfigured && !content && !isLoading && !error && !savedNarrative) {
       startStream();
     }
-  }, [settings.deepseekApiKey, content, isLoading, error, savedNarrative, startStream]);
+  }, [isConfigured, content, isLoading, error, savedNarrative, startStream]);
 
-  if (!settings.deepseekApiKey) {
+  if (!isConfigured) {
     return (
       <div className={cn('bauhaus-card-sm p-5 sm:p-6', className)}>
         <p className="font-display text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
@@ -72,10 +75,10 @@ export function AINarrative({ scores, recordId, savedNarrative, className }: AIN
         </p>
         <div className="mt-4 text-center py-8">
           <p className="text-sm text-[var(--text-secondary)]">
-            配置 DeepSeek API Key 后即可启用 AI 深度解读
+            配置 AI 服务后即可启用深度解读
           </p>
           <p className="mt-2 text-xs text-[var(--text-secondary)]">
-            前往 设置 → AI 配置 填写 API Key
+            推荐：设置 → AI 配置 → Worker URL（API Key 存储在服务端）
           </p>
         </div>
       </div>

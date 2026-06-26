@@ -2,7 +2,10 @@ import type { DomainScores } from './scoring';
 import type { Domain } from '@/data/questions';
 
 export interface AIStreamOptions {
-  apiKey: string;
+  /** Worker 代理 URL。设置后直连 Worker，API Key 不经过客户端 */
+  proxyUrl?: string;
+  /** 直连 DeepSeek 时使用（开发备用），不持久化 */
+  apiKey?: string;
   corsProxy?: string;
   onToken: (token: string) => void;
   onComplete: () => void;
@@ -196,28 +199,35 @@ export async function streamAIAnalysis(
   scores: DomainScores,
   options: AIStreamOptions
 ): Promise<void> {
-  const { apiKey, corsProxy, onToken, onComplete, onError } = options;
+  const { proxyUrl, apiKey, corsProxy, onToken, onComplete, onError } = options;
 
-  if (!apiKey) {
-    onError(new Error('请先在设置中配置 API Key'));
+  if (!proxyUrl && !apiKey) {
+    onError(new Error('请先在设置中配置 API（Worker URL 或 API Key）'));
     return;
   }
 
   const analysis = analyzeScores(scores);
   const prompt = buildPrompt(scores, analysis);
 
-  // Build the API URL, optionally using CORS proxy
-  const apiUrl = corsProxy
-    ? `${corsProxy}${encodeURIComponent(`${DEEPSEEK_BASE_URL}/chat/completions`)}`
-    : `${DEEPSEEK_BASE_URL}/chat/completions`;
+  // Build the API URL
+  // Priority: proxyUrl → direct DeepSeek (via corsProxy) → direct DeepSeek
+  const base = proxyUrl || DEEPSEEK_BASE_URL;
+  const apiUrl = corsProxy && !proxyUrl
+    ? `${corsProxy}${encodeURIComponent(`${base}/chat/completions`)}`
+    : `${base}/chat/completions`;
+
+  // Build headers — proxy handles auth, direct mode uses apiKey
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (!proxyUrl && apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
 
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
+      headers,
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
         messages: [

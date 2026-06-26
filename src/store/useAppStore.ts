@@ -13,6 +13,9 @@ export interface TestRecord {
 export interface AppSettings {
   darkMode: boolean;
   fontSize: 'small' | 'medium' | 'large';
+  /** Worker 代理 URL（推荐）。设置后 API Key 存储在 Worker 上，不暴露给客户端 */
+  proxyUrl: string;
+  /** 本地开发备用：直连 DeepSeek，仅内存保留，不持久化 */
   deepseekApiKey: string;
   corsProxy: string;
 }
@@ -46,6 +49,7 @@ export const useAppStore = create<AppState>()(
       settings: {
         darkMode: false,
         fontSize: 'medium',
+        proxyUrl: '',
         deepseekApiKey: '',
         corsProxy: '',
       },
@@ -115,7 +119,10 @@ export const useAppStore = create<AppState>()(
       name: STORAGE_KEY,
       partialize: (state) => ({
         history: state.history,
-        settings: state.settings,
+        settings: {
+          ...state.settings,
+          deepseekApiKey: '', // ⚠️ API Key 不持久化到 localStorage
+        },
       }),
     }
   )
