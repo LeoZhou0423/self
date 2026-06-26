@@ -10,11 +10,11 @@ interface RadarChartProps {
 
 const DOMAIN_ORDER: Domain[] = ['O', 'C', 'E', 'A', 'N'];
 
-const getLabelPosition = (angle: number, radius: number, center: number, label: string) => {
+const getLabelPosition = (angle: number, radius: number, center: number) => {
   const isTop = angle > -Math.PI / 2 - 0.6 && angle < -Math.PI / 2 + 0.6;
   const isBottom = angle > Math.PI / 2 - 0.6 && angle < Math.PI / 2 + 0.6;
   const offset = 18;
-  let x = center + (radius + offset) * Math.cos(angle);
+  const x = center + (radius + offset) * Math.cos(angle);
   let y = center + (radius + offset) * Math.sin(angle);
 
   if (isTop) {
@@ -41,6 +41,7 @@ export function RadarChart({
   className = '',
 }: RadarChartProps) {
   const [progress, setProgress] = useState(animated ? 0 : 1);
+  const [hoveredDomain, setHoveredDomain] = useState<Domain | null>(null);
   const hasAnimated = useRef(false);
 
   useEffect(() => {
@@ -56,7 +57,6 @@ export function RadarChart({
     const step = (now: number) => {
       const elapsed = now - start;
       const p = Math.min(elapsed / duration, 1);
-      // Ease-out cubic for smooth entrance
       const eased = 1 - Math.pow(1 - p, 3);
       setProgress(eased);
       if (p < 1) {
@@ -102,7 +102,6 @@ export function RadarChart({
     });
   }, [scores, center, radius, angleStep, progress]);
 
-  // Compute cubic bezier control points for smooth curves between dimension points
   const bezierSegments = useMemo(() => {
     const n = dataPoints.length;
     if (n === 0) return [];
@@ -111,7 +110,6 @@ export function RadarChart({
       const prev = dataPoints[(i - 1 + n) % n];
       const next2 = dataPoints[(i + 2) % n];
 
-      // Catmull-Rom-like control points with tension for smooth closed curves
       const tension = 0.25;
       const cp1x = p.x + (next.x - prev.x) * tension;
       const cp1y = p.y + (next.y - prev.y) * tension;
@@ -127,7 +125,6 @@ export function RadarChart({
     });
   }, [dataPoints]);
 
-  // Closed cubic bezier path for the filled polygon
   const fillPathD = useMemo(() => {
     if (bezierSegments.length === 0) return '';
     return bezierSegments
@@ -140,7 +137,6 @@ export function RadarChart({
       .join(' ') + ' Z';
   }, [bezierSegments]);
 
-  // Individual bezier segments with domain colors and glow flags
   const segmentPaths = useMemo(() => {
     return bezierSegments.map((seg) => ({
       d: `M ${seg.p0.x} ${seg.p0.y} C ${seg.cp1.x} ${seg.cp1.y} ${seg.cp2.x} ${seg.cp2.y} ${seg.p1.x} ${seg.p1.y}`,
@@ -156,16 +152,15 @@ export function RadarChart({
       height={size}
       viewBox={`0 0 ${size} ${size}`}
       className={className}
-      aria-label="大五人格雷达图"
+      role="img"
+      aria-label="五个维度的得分分布"
     >
       <defs>
-        {/* Subtle radial gradient fill inside the data polygon */}
         <radialGradient id="radar-fill" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="rgba(198, 123, 92, 0.35)" />
           <stop offset="100%" stopColor="rgba(198, 123, 92, 0.06)" />
         </radialGradient>
 
-        {/* Per-dimension glow filters using feGaussianBlur + feComposite */}
         {DOMAIN_ORDER.map((domain) => (
           <filter
             key={domain}
@@ -212,14 +207,14 @@ export function RadarChart({
         })}
       </g>
 
-      {/* Filled polygon with subtle gradient */}
+      {/* Filled polygon */}
       <path
         d={fillPathD}
         fill="url(#radar-fill)"
         stroke="none"
       />
 
-      {/* Color-coded bezier segments with glow on high-scoring areas */}
+      {/* Color-coded bezier segments */}
       <g>
         {segmentPaths.map((seg, idx) => (
           <path
@@ -227,27 +222,41 @@ export function RadarChart({
             d={seg.d}
             fill="none"
             stroke={seg.color}
-            strokeWidth={2.5}
+            strokeWidth={hoveredDomain === seg.domain ? 4 : 2.5}
             strokeLinecap="round"
             strokeLinejoin="round"
             filter={seg.hasGlow ? `url(#glow-${seg.domain})` : undefined}
-            opacity={0.9}
+            opacity={hoveredDomain && hoveredDomain !== seg.domain ? 0.4 : 0.9}
+            style={{ transition: 'stroke-width 0.2s, opacity 0.2s' }}
           />
         ))}
       </g>
 
-      {/* Data points and labels */}
+      {/* Data points, labels, and interactive areas */}
       {dataPoints.map((p, idx) => {
-        const labelPos = getLabelPosition(p.angle, radius, center, p.label);
+        const labelPos = getLabelPosition(p.angle, radius, center);
+        const isHovered = hoveredDomain === p.domain;
         return (
-          <g key={idx}>
+          <g key={idx}
+            onMouseEnter={() => setHoveredDomain(p.domain)}
+            onMouseLeave={() => setHoveredDomain(null)}
+            style={{ cursor: 'pointer' }}
+          >
+            {/* Invisible hit area for better interaction */}
             <circle
               cx={p.x}
               cy={p.y}
-              r={4}
+              r={18}
+              fill="transparent"
+            />
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={isHovered ? 6 : 4}
               fill={p.color}
               stroke="#fff"
               strokeWidth={1.5}
+              style={{ transition: 'r 0.2s' }}
             />
             <text
               x={labelPos.x}
@@ -257,9 +266,37 @@ export function RadarChart({
               fontSize={12}
               fill="currentColor"
               className="font-display"
+              opacity={hoveredDomain && hoveredDomain !== p.domain ? 0.4 : 1}
+              style={{ transition: 'opacity 0.2s' }}
             >
               {p.label}
             </text>
+            {/* Tooltip on hover */}
+            {isHovered && (
+              <g>
+                <rect
+                  x={p.x - 28}
+                  y={p.y - 28}
+                  width={56}
+                  height={20}
+                  fill="var(--bg-alt)"
+                  stroke="var(--border-color)"
+                  strokeWidth={1}
+                  rx={2}
+                />
+                <text
+                  x={p.x}
+                  y={p.y - 14}
+                  textAnchor="middle"
+                  fontSize={10}
+                  fill="var(--text-inverse)"
+                  className="font-display"
+                  fontWeight="bold"
+                >
+                  {p.value}分
+                </text>
+              </g>
+            )}
           </g>
         );
       })}

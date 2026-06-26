@@ -1,16 +1,18 @@
-import { useState } from 'react';
-import { Moon, Sun, Type, Download, Trash2, BookOpen, Github, Key, Eye, EyeOff } from 'lucide-react';
-import { useAppStore } from '@/store/useAppStore';
-import { REFERENCES } from '@/data/descriptions';
+import { useState, useRef, useCallback } from 'react';
+import { Moon, Sun, Type, Download, Trash2, Key, Eye, EyeOff, Upload, RotateCcw } from 'lucide-react';
+import { useAppStore, type TestRecord } from '@/store/useAppStore';
 import { exportDataToJSON } from '@/utils/export';
 
 export function Settings() {
-  const { settings, updateSettings, history, clearHistory } = useAppStore();
+  const { settings, updateSettings, history, clearHistory, importData } = useAppStore();
   const [showApiKey, setShowApiKey] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState(settings.mimoApiKey);
-  const [kimiApiKeyInput, setKimiApiKeyInput] = useState(settings.kimiApiKey);
-  const [baseUrlInput, setBaseUrlInput] = useState(settings.mimoBaseUrl);
+  const [apiKeyInput, setApiKeyInput] = useState(settings.deepseekApiKey);
   const [corsProxyInput, setCorsProxyInput] = useState(settings.corsProxy);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState(false);
+  const [clearConfirm, setClearConfirm] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExportData = () => {
     exportDataToJSON(
@@ -19,37 +21,82 @@ export function Settings() {
         history,
         settings,
       },
-      'big-five-backup'
     );
   };
 
-  const fontSizeClasses = {
-    small: 'text-sm',
-    medium: 'text-base',
-    large: 'text-lg',
+  const handleImportData = useCallback((file: File) => {
+    setImportError(null);
+    setImportSuccess(false);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const raw = e.target?.result as string;
+        const data = JSON.parse(raw);
+
+        // Validate structure
+        if (typeof data !== 'object' || data === null) {
+          throw new Error('Invalid format');
+        }
+
+        const importPayload: { history?: TestRecord[]; settings?: Partial<typeof settings> } = {};
+
+        if (data.settings && typeof data.settings === 'object') {
+          importPayload.settings = data.settings;
+        }
+        if (Array.isArray(data.history)) {
+          importPayload.history = data.history;
+        }
+
+        importData(importPayload);
+        setImportSuccess(true);
+      } catch {
+        setImportError('导入失败：文件格式不正确');
+      }
+    };
+    reader.readAsText(file);
+  }, [importData]);
+
+  const handleResetDefaults = () => {
+    updateSettings({
+      darkMode: false,
+      fontSize: 'medium',
+      deepseekApiKey: '',
+      corsProxy: '',
+    });
+    setApiKeyInput('');
+    setCorsProxyInput('');
+    setResetConfirm(false);
+  };
+
+  const handleClearData = () => {
+    clearHistory();
+    updateSettings({ darkMode: false, fontSize: 'medium' });
+    setClearConfirm(false);
   };
 
   return (
-    <main className="animate-fade-in-up px-6 py-10">
+    <main className="animate-fade-in-up px-4 py-6 sm:px-6 sm:py-10">
       <div className="mx-auto max-w-2xl">
-        <h1 className="font-display text-3xl font-bold uppercase tracking-tight sm:text-4xl">
+        <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl lg:text-4xl">
           设置
         </h1>
-        <p className="mt-2 text-sm text-[var(--text-secondary)]">
+        <p className="mt-2 text-xs text-[var(--text-secondary)] sm:text-sm">
           管理你的界面偏好与本地数据
         </p>
 
         {/* Appearance */}
         <section className="mt-8">
-          <h2 className="font-display text-sm font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+          <h2 className="font-display text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
             界面设置
           </h2>
-          <div className="mt-4 bauhaus-card-sm p-6">
+          <div className="mt-4 bauhaus-card-sm p-5 sm:p-6">
+            {/* Dark mode toggle */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {settings.darkMode ? <Moon size={20} /> : <Sun size={20} />}
+                {settings.darkMode ? <Moon size={18} /> : <Sun size={18} />}
                 <div>
-                  <p className="font-medium">深色模式</p>
+                  <p className="font-medium text-sm sm:text-base">深色模式</p>
                   <p className="text-xs text-[var(--text-secondary)]">
                     切换浅色 / 深色主题
                   </p>
@@ -57,34 +104,36 @@ export function Settings() {
               </div>
               <button
                 onClick={() => updateSettings({ darkMode: !settings.darkMode })}
-                className={`relative h-8 w-14 border-2 border-[var(--border-color)] transition-colors ${
+                className={`relative h-7 w-12 border-2 border-[var(--border-color)] transition-colors ${
                   settings.darkMode ? 'bg-[var(--bg-alt)]' : 'bg-[var(--bg-primary)]'
                 }`}
+                role="switch"
+                aria-checked={settings.darkMode}
               >
                 <span
-                  className={`absolute top-0.5 h-6 w-6 border-2 border-[var(--border-color)] bg-[var(--bg-card)] transition-all ${
-                    settings.darkMode ? 'left-[calc(100%-1.6rem)]' : 'left-0.5'
+                  className={`absolute top-0.5 h-5 w-5 border-2 border-[var(--border-color)] bg-[var(--bg-card)] transition-all ${
+                    settings.darkMode ? 'left-[calc(100%-1.4rem)]' : 'left-0.5'
                   }`}
                 />
               </button>
             </div>
 
-            <div className="mt-6 border-t-2 border-[var(--border-color)] pt-6">
+            <div className="mt-5 border-t-2 border-[var(--border-color)] pt-5">
               <div className="flex items-center gap-3">
-                <Type size={20} />
+                <Type size={18} />
                 <div>
-                  <p className="font-medium">字体大小</p>
+                  <p className="font-medium text-sm sm:text-base">字体大小</p>
                   <p className="text-xs text-[var(--text-secondary)]">
                     调整应用全局字体尺寸
                   </p>
                 </div>
               </div>
-              <div className="mt-4 flex gap-3">
+              <div className="mt-3 flex gap-2 sm:gap-3">
                 {(['small', 'medium', 'large'] as const).map((size) => (
                   <button
                     key={size}
                     onClick={() => updateSettings({ fontSize: size })}
-                    className={`flex-1 border-2 py-2 text-sm font-medium transition-colors ${
+                    className={`flex-1 border-2 py-2 text-xs font-medium transition-colors sm:text-sm ${
                       settings.fontSize === size
                         ? 'border-[var(--border-color)] bg-[var(--bg-alt)] text-[var(--text-inverse)]'
                         : 'border-[var(--border-color)] bg-[var(--bg-card)] hover:bg-[var(--bg-primary)]'
@@ -95,114 +144,67 @@ export function Settings() {
                 ))}
               </div>
             </div>
+
+            <div className="mt-5 border-t-2 border-[var(--border-color)] pt-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <RotateCcw size={18} />
+                  <div>
+                    <p className="font-medium text-sm sm:text-base">恢复默认</p>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      重置所有设置到默认值
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setResetConfirm(true)}
+                  className="bauhaus-btn-secondary px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm"
+                >
+                  重置
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
         {/* AI API Configuration */}
         <section className="mt-8">
-          <h2 className="font-display text-sm font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+          <h2 className="font-display text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
             AI 配置
           </h2>
-          <div className="mt-4 bauhaus-card-sm p-6">
+          <div className="mt-4 bauhaus-card-sm p-5 sm:p-6">
             <div className="flex items-start gap-3">
-              <Key size={20} className="mt-0.5" />
-              <div className="flex-1">
-                {/* Provider Selection */}
-                <p className="font-medium">AI 提供商</p>
+              <Key size={18} className="mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm sm:text-base">DeepSeek API Key</p>
                 <p className="text-xs text-[var(--text-secondary)]">
-                  选择用于 AI 深度解读的服务
+                  api.deepseek.com
                 </p>
-                <div className="mt-3 flex gap-3">
+                <div className="mt-2 flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type={showApiKey ? 'text' : 'password'}
+                      value={apiKeyInput}
+                      onChange={(e) => setApiKeyInput(e.target.value)}
+                      placeholder="输入你的 DeepSeek API Key"
+                      className="w-full border-2 border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2 pr-10 text-xs sm:text-sm"
+                    />
+                    <button
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    >
+                      {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                   <button
-                    onClick={() => updateSettings({ aiProvider: 'mimo' })}
-                    className={`flex-1 border-2 py-2 text-sm font-medium transition-colors ${
-                      settings.aiProvider === 'mimo'
-                        ? 'border-[var(--border-color)] bg-[var(--bg-alt)] text-[var(--text-inverse)]'
-                        : 'border-[var(--border-color)] bg-[var(--bg-card)] hover:bg-[var(--bg-primary)]'
-                    }`}
+                    onClick={() => updateSettings({ deepseekApiKey: apiKeyInput })}
+                    className="bauhaus-btn-secondary px-3 py-2 text-xs sm:px-4 sm:text-sm"
                   >
-                    Mimo
-                  </button>
-                  <button
-                    onClick={() => updateSettings({ aiProvider: 'kimi' })}
-                    className={`flex-1 border-2 py-2 text-sm font-medium transition-colors ${
-                      settings.aiProvider === 'kimi'
-                        ? 'border-[var(--border-color)] bg-[var(--bg-alt)] text-[var(--text-inverse)]'
-                        : 'border-[var(--border-color)] bg-[var(--bg-card)] hover:bg-[var(--bg-primary)]'
-                    }`}
-                  >
-                    Kimi
+                    保存
                   </button>
                 </div>
 
-                {/* Mimo API Key */}
-                {settings.aiProvider === 'mimo' && (
-                  <div className="mt-5">
-                    <p className="font-medium">Mimo API Key</p>
-                    <p className="text-xs text-[var(--text-secondary)]">
-                      token-plan-cn.xiaomimimo.com
-                    </p>
-                    <div className="mt-2 flex gap-2">
-                      <div className="relative flex-1">
-                        <input
-                          type={showApiKey ? 'text' : 'password'}
-                          value={apiKeyInput}
-                          onChange={(e) => setApiKeyInput(e.target.value)}
-                          placeholder="输入你的 Mimo API Key"
-                          className="w-full border-2 border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2 pr-10 text-sm"
-                        />
-                        <button
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                        >
-                          {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                      <button
-                        onClick={() => updateSettings({ mimoApiKey: apiKeyInput })}
-                        className="bauhaus-btn-secondary px-4 py-2 text-sm"
-                      >
-                        保存
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Kimi API Key */}
-                {settings.aiProvider === 'kimi' && (
-                  <div className="mt-5">
-                    <p className="font-medium">Kimi API Key</p>
-                    <p className="text-xs text-[var(--text-secondary)]">
-                      api.kimi.com/coding/v1
-                    </p>
-                    <div className="mt-2 flex gap-2">
-                      <div className="relative flex-1">
-                        <input
-                          type={showApiKey ? 'text' : 'password'}
-                          value={kimiApiKeyInput}
-                          onChange={(e) => setKimiApiKeyInput(e.target.value)}
-                          placeholder="输入你的 Kimi API Key"
-                          className="w-full border-2 border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2 pr-10 text-sm"
-                        />
-                        <button
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                        >
-                          {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                      <button
-                        onClick={() => updateSettings({ kimiApiKey: kimiApiKeyInput })}
-                        className="bauhaus-btn-secondary px-4 py-2 text-sm"
-                      >
-                        保存
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* CORS Proxy */}
-                <div className="mt-5">
+                <div className="mt-4">
                   <p className="text-xs text-[var(--text-secondary)]">CORS 代理（解决跨域问题）</p>
                   <div className="mt-2 flex gap-2">
                     <input
@@ -210,11 +212,11 @@ export function Settings() {
                       value={corsProxyInput}
                       onChange={(e) => setCorsProxyInput(e.target.value)}
                       placeholder="https://corsproxy.io/?"
-                      className="flex-1 border-2 border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2 text-sm"
+                      className="flex-1 border-2 border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2 text-xs sm:text-sm"
                     />
                     <button
                       onClick={() => updateSettings({ corsProxy: corsProxyInput })}
-                      className="bauhaus-btn-secondary px-4 py-2 text-sm"
+                      className="bauhaus-btn-secondary px-3 py-2 text-xs sm:px-4 sm:text-sm"
                     >
                       保存
                     </button>
@@ -224,9 +226,7 @@ export function Settings() {
                   </p>
                 </div>
 
-                {/* Status */}
-                {((settings.aiProvider === 'mimo' && settings.mimoApiKey) ||
-                  (settings.aiProvider === 'kimi' && settings.kimiApiKey)) && (
+                {settings.deepseekApiKey && (
                   <p className="mt-3 text-xs text-emerald-600">
                     ✓ API Key 已配置，AI 深度解读功能可用
                   </p>
@@ -238,15 +238,16 @@ export function Settings() {
 
         {/* Data Management */}
         <section className="mt-8">
-          <h2 className="font-display text-sm font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+          <h2 className="font-display text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
             数据管理
           </h2>
-          <div className="mt-4 bauhaus-card-sm p-6">
+          <div className="mt-4 bauhaus-card-sm p-5 sm:p-6">
+            {/* Export */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                <Download size={20} />
+                <Download size={18} />
                 <div>
-                  <p className="font-medium">导出数据</p>
+                  <p className="font-medium text-sm sm:text-base">导出数据</p>
                   <p className="text-xs text-[var(--text-secondary)]">
                     将历史记录与设置导出为 JSON 文件
                   </p>
@@ -254,30 +255,63 @@ export function Settings() {
               </div>
               <button
                 onClick={handleExportData}
-                className="bauhaus-btn-secondary px-5 py-2 text-sm"
+                className="bauhaus-btn-secondary px-4 py-2 text-xs sm:px-5 sm:text-sm"
               >
                 导出 JSON
               </button>
             </div>
 
-            <div className="mt-6 flex flex-col gap-4 border-t-2 border-[var(--border-color)] pt-6 sm:flex-row sm:items-center sm:justify-between">
+            {/* Import */}
+            <div className="mt-5 flex flex-col gap-4 border-t-2 border-[var(--border-color)] pt-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                <Trash2 size={20} className="text-[var(--accent-red)]" />
+                <Upload size={18} />
                 <div>
-                  <p className="font-medium">清除所有数据</p>
+                  <p className="font-medium text-sm sm:text-base">导入数据</p>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    从 JSON 文件恢复历史记录与设置
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="bauhaus-btn-secondary px-4 py-2 text-xs sm:px-5 sm:text-sm"
+              >
+                选择文件
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImportData(file);
+                  e.target.value = '';
+                }}
+                className="hidden"
+              />
+            </div>
+
+            {importError && (
+              <p className="mt-3 text-xs text-[var(--accent-red)]">{importError}</p>
+            )}
+            {importSuccess && (
+              <p className="mt-3 text-xs text-emerald-600">导入成功，页面即将刷新</p>
+            )}
+
+            {/* Clear */}
+            <div className="mt-5 flex flex-col gap-4 border-t-2 border-[var(--border-color)] pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <Trash2 size={18} className="text-[var(--accent-red)]" />
+                <div>
+                  <p className="font-medium text-sm sm:text-base">清除所有数据</p>
                   <p className="text-xs text-[var(--text-secondary)]">
                     删除所有本地历史记录与设置
                   </p>
                 </div>
               </div>
               <button
-                onClick={() => {
-                  if (confirm('确定清除所有本地数据吗？此操作无法撤销。')) {
-                    clearHistory();
-                    updateSettings({ darkMode: false, fontSize: 'medium' });
-                  }
-                }}
-                className="bauhaus-btn bauhaus-btn-red px-5 py-2 text-sm"
+                onClick={() => setClearConfirm(true)}
+                className="bauhaus-btn bauhaus-btn-red px-4 py-2 text-xs sm:px-5 sm:text-sm"
               >
                 清除数据
               </button>
@@ -285,50 +319,51 @@ export function Settings() {
           </div>
         </section>
 
-        {/* About */}
-        <section className="mt-8">
-          <h2 className="font-display text-sm font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-            关于
-          </h2>
-          <div className="mt-4 bauhaus-card-sm p-6">
-            <div className="flex items-start gap-3">
-              <BookOpen size={20} className="mt-0.5" />
-              <div>
-                <p className="font-medium">量表说明</p>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
-                  本应用使用简化版 BFI-2（Big Five Inventory-2）60 题结构，包含五大人格维度与 15 个子维度。测试结果仅供自我认知与参考，不能替代专业心理诊断。
-                </p>
-              </div>
-            </div>
+      </div>
 
-            <div className="mt-6 border-t-2 border-[var(--border-color)] pt-6">
-              <p className="font-medium">参考文献</p>
-              <ul className="mt-3 space-y-3 text-xs leading-relaxed text-[var(--text-secondary)]">
-                {REFERENCES.map((ref, idx) => (
-                  <li key={idx} className="pl-3 border-l-2 border-[var(--accent-blue)]">
-                    {ref}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="mt-6 border-t-2 border-[var(--border-color)] pt-6">
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
-              >
-                <Github size={18} />
-                开源声明
-              </a>
-              <p className="mt-2 text-xs text-[var(--text-secondary)]">
-                版本 1.0.0 · 数据本地存储 · 隐私优先
-              </p>
+      {/* Reset Confirm Modal */}
+      {resetConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setResetConfirm(false)} />
+          <div className="relative bauhaus-card p-5 max-w-sm w-full sm:p-6">
+            <h3 className="font-display text-lg font-bold uppercase tracking-wide">恢复默认设置</h3>
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              确定要重置所有设置到默认值吗？此操作不会删除历史记录。
+            </p>
+            <div className="mt-5 flex gap-3">
+              <button onClick={() => setResetConfirm(false)} className="bauhaus-btn-secondary flex-1 px-4 py-2 text-sm">
+                取消
+              </button>
+              <button onClick={handleResetDefaults} className="bauhaus-btn flex-1 px-4 py-2 text-sm">
+                重置
+              </button>
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+      )}
+
+      {/* Clear Confirm Modal */}
+      {clearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setClearConfirm(false)} />
+          <div className="relative bauhaus-card p-5 max-w-sm w-full sm:p-6">
+            <h3 className="font-display text-lg font-bold uppercase tracking-wide text-[var(--accent-red)]">
+              清除所有数据
+            </h3>
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              确定要删除所有本地历史记录和设置吗？此操作无法撤销。
+            </p>
+            <div className="mt-5 flex gap-3">
+              <button onClick={() => setClearConfirm(false)} className="bauhaus-btn-secondary flex-1 px-4 py-2 text-sm">
+                取消
+              </button>
+              <button onClick={handleClearData} className="bauhaus-btn bauhaus-btn-red flex-1 px-4 py-2 text-sm">
+                清除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

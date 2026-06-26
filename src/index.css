@@ -158,6 +158,41 @@ input:focus-visible {
   outline-offset: 2px;
 }
 
+/* Prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Touch device improvements */
+@media (hover: none) {
+  .bauhaus-btn:hover,
+  .bauhaus-btn-secondary:hover {
+    transform: none;
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .bauhaus-card,
+  .bauhaus-card-sm {
+    border-width: 4px;
+  }
+  .bauhaus-btn,
+  .bauhaus-btn-secondary {
+    border-width: 4px;
+  }
+}
+
 /* Print styles */
 @media print {
   .no-print {

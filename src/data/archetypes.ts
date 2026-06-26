@@ -427,6 +427,9 @@ function matchPattern(scores: ScoreRecord, pattern: ArchetypePattern): number {
  *
  * Ties are broken in favor of the archetype with **more** pattern constraints
  * (more specific match), then by array order (earlier in ARCHETYPES wins).
+ *
+ * If no archetype reaches a minimum match threshold (0.6), falls back to
+ * "flexible-adapter" as the default, reflecting a balanced profile.
  */
 export function matchArchetype(scores: ScoreRecord): Archetype {
   let best = ARCHETYPES[0];
@@ -445,6 +448,14 @@ export function matchArchetype(scores: ScoreRecord): Archetype {
       bestConstraints = constraintCount;
       best = arch;
     }
+  }
+
+  // Fallback: if best match is below threshold, default to flexible-adapter
+  // This ensures users with balanced profiles always get a suitable archetype
+  const MIN_MATCH_THRESHOLD = 0.6;
+  if (bestScore < MIN_MATCH_THRESHOLD) {
+    const defaultArch = ARCHETYPES.find((a) => a.id === 'flexible-adapter');
+    if (defaultArch) return defaultArch;
   }
 
   return best;

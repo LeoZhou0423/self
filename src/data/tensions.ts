@@ -54,7 +54,10 @@ export interface TensionPattern {
  * - Widiger, T. A., & Oltmanns, J. R. (2017). Neuroticism is a fundamental domain of personality
  *     with enormous public health implications.
  */
-export const TENSION_PATTERNS: readonly TensionPattern[] = [
+export const TENSION_PATTERNS: readonly (TensionPattern & {
+  /** Pattern mode: 'both-high' = both > 60, 'both-low' = both < 40, 'asymmetric' = specific high/low */
+  mode?: 'both-high' | 'both-low' | 'asymmetric';
+})[] = [
   // ============================================================
   // 1. 高神经质 + 高尽责性 — 焦虑型完美主义
   // ============================================================

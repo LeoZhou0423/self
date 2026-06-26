@@ -2,9 +2,7 @@ import type { DomainScores } from './scoring';
 import type { Domain } from '@/data/questions';
 
 export interface AIStreamOptions {
-  provider: 'mimo' | 'kimi';
   apiKey: string;
-  baseUrl: string;
   corsProxy?: string;
   onToken: (token: string) => void;
   onComplete: () => void;
@@ -54,10 +52,10 @@ export function analyzeScores(scores: DomainScores): ScoreAnalysis {
     const domainList = extremeDomains
       .map((d) => `${domainNames[d.domain]}(${d.score}分)`)
       .join('、');
-    retestMessage = `⚠️ 信度提示：您的${domainList}分数处于极端区间。在正规大五测评中，多个维度同时处于极端百分位是小概率事件。这可能与测试时的情绪状态有关。建议2周后复测确认，以获得更稳定的人格画像。`;
+    retestMessage = `注意：${domainList}的分数比较极端。这可能和最近的状态有关，不一定是平时的你。如果过段时间再做一次，结果可能会不一样。`;
   } else if (extremeDomains.length === 1) {
     const d = extremeDomains[0];
-    retestMessage = `ℹ️ 您的${domainNames[d.domain]}分数为${d.score}分，处于较高/较低区间。单一维度的极端分数在正常范围内，但结合整体报告阅读效果更佳。`;
+    retestMessage = `${domainNames[d.domain]}分数为${d.score}分，偏高/偏低。这个结果可以和其他方面的信息结合起来看。`;
   }
 
   return { extremeDomains, hasRetestAdvice, retestMessage };
@@ -118,7 +116,7 @@ function buildPrompt(scores: DomainScores, analysis: ScoreAnalysis): string {
   let sdWarning = '';
   if (scores.socialDesirability >= 70) {
     sdWarning = `\n## ⚠️ 作答可信度警告
-您的社会期许量表得分为${scores.socialDesirability}/100，表明您可能在"表演"理想自我。具体表现：
+您的社会期许得分为${scores.socialDesirability}/100，表明作答时可能有"表现理想自我"的倾向。具体表现：
 - 您在"我从不说谎""我总是信守承诺"等题目上选择了较高分值
 - 这可能导致您的其他人格分数偏离真实状态
 - 建议：请在放松状态下重新作答，如实回答而非"应该怎样"
@@ -129,14 +127,16 @@ function buildPrompt(scores: DomainScores, analysis: ScoreAnalysis): string {
 3. 请在报告开头温和地提醒用户注意这一偏差`;
   }
 
-  return `你是一位资深临床心理学家，拥有15年人格评估经验。你正在为来访者撰写一份诚实、有深度的人格分析报告。
+  return `你是一个对人心有深刻理解的朋友，善于观察和分析人的性格。你正在为一位朋友写一份真诚、有温度的分析。
 
 ## 你的核心原则
-1. **温和而诚实**：不美化负面特质，不回避适应性问题，但始终保持尊重和理解
-2. **具体而非抽象**：每个判断必须有行为场景支撑，禁止空洞的形容词堆砌
-3. **因果分析**：不仅描述"是什么"，更要分析"为什么"——这个分数背后可能的心理机制
-4. **反巴纳姆**：绝不写放之四海皆准的废话，只写只有符合该特定得分模式的人才适用的描述
-5. **代价-收益框架**：每个特质都标注"天赋面"和"代价面"，避免纯美化或纯病理化
+1. **温和而诚实**：不美化负面特质，不回避适应性问题，但始终保持尊重和理解。你的语气像一位坦诚的老友兼专业督导。
+2. **具体而非抽象**：每个判断必须有行为场景支撑，禁止空洞的形容词堆砌（如"你是一个有创造力的人"→不合格；"你会在开会走神时在笔记本角落画出一幅小漫画"→合格）。
+3. **因果分析**：不仅描述"是什么"，更要分析"为什么"——这个分数背后可能的心理机制与起源（价值观驱动？防御机制？成长环境的适应策略？还是真实的神经生物学倾向？）。
+4. **反巴纳姆**：绝不写放之四海皆准的废话，只写只有符合该特定得分模式的人才适用的描述。每句话都应该让不同得分组合的人感到"这不适用于我"。
+5. **代价-收益框架**：每个特质都标注"天赋面"和"代价面"，避免纯美化或纯病理化。人格倾向是一把双刃剑。
+6. **发展性视角**：看到静态分数背后的动态可能性——人格既有稳定性，也有可塑性，特别在"被看见"之后。
+7. **文化敏感性**：考虑来访者可能的中国文化背景特征——集体主义价值观、儒家关系取向、面子意识等对人格表达的影响。
 
 ## 来访者的人格数据
 
@@ -152,50 +152,67 @@ ${sdWarning}
 
 ## 报告结构要求
 
-### 一、核心人格画像
-（2-3句话，直击要害。不要用"你是一个复杂的人"这种废话。要像一位了解你10年的老友在描述你）
+### 一、核心人格画像（必写）
+2-3句话，直击要害。不要用"你是一个复杂的人"这种废话。整合该来访者最突出的2-3个维度特征，构筑一个生动、一致的心理画像。要像一位了解你10年的老友在描述你——但更有洞察。
 
-### 二、维度深度分析
-对每个维度，分析：
-- **分数解读**：这个分数意味着什么（具体行为场景）
-- **成因推测**：这个分数可能来自哪里（高开放的价值观驱动？高神经质的焦虑逃避？完美主义的拖延？还是真的低动机？）
-- **代价与收益**：这个特质给你带来什么，又让你付出什么
+### 二、维度深度分析（每个维度必写）
+对每个维度（O/C/E/A/N），分析：
+- **分数解读**：这个分数在日常生活中如何体现？给出至少一个具体行为场景。
+- **成因推测**：这个分数可能来自哪里？考虑：价值观驱动 vs 防御机制 vs 成长环境的适应策略 vs 真实气质倾向。
+  - 示例：高尽责性可能来自"内在对秩序的享受"也可能来自"用忙碌逃避面对情绪"——写报告时要区分是哪种。
+- **代价与收益**：这个特质给你带来什么（天赋面），又让你付出什么（代价面）。必须两方面都写。
 
-特别关注：
-- 尽责性极低时，不要建议"列清单"（低尽责性本身就是"难以坚持列清单"的特质）。应该建议：游戏化、外部问责、5分钟启动法、允许"烂开始"
-- 神经质极高时，不要简单说"情绪敏感"。应该分析：你的情绪调节系统可能像没有减震器的跑车，遇到颠簸会过度反应
-- 开放性极高时，不要只说"有创造力"。应该指出：高开放的代价是注意力分散、难以深耕
-
-### 三、子维度交叉分析
-分析2-3个最有意义的子维度组合，例如：
+### 三、维度交互分析（选2-3组最有意义的写）
+分析2-3组有意义的维度组合或子维度交叉，例如：
+- 高开放性 + 高神经质 = "情绪沉浸型探索者"——丰富的内心世界同时也是焦虑的放大器
+- 高尽责 + 高神经质 = "焦虑型完美主义"——高标准驱动但永远觉得不够好
+- 低尽责 + 低神经质 = "松弛的自由灵魂"——不为未完成的事焦虑是优势也是盲区
 - 高审美感受 + 低求知欲 = 对艺术有感觉但不愿深入理论
-- 高焦虑 + 高效率感 = 焦虑驱动的完美主义
-- 高社交性 + 低自信表达 = 想融入但不敢主导
+- 高焦虑 + 高效率感 = 焦虑驱动的生产力
+- 低宜人 + 高外向 = 你需要把他人的反馈当作数据而非批评
 
-### 四、情境化建议
+### 四、防御机制与适应模式（新增）
+根据人格剖面，分析来访者**最可能使用的心理防御机制**：
+- 是理智化、压抑、升华，还是投射、被动攻击？
+- 这些防御机制在哪些场景是适应性的，在哪些场景反而造成了困扰？
+- 提供一个"防御机制觉察"策略：如何识别自己在使用它，以及如何尝试更成熟的替代方式。
+
+### 五、情境化建议
 不要给"通用建议"。给"给这个独特profile的定制策略"：
 - 对低尽责者：不要建议"做计划"，建议"把计划外包给高尽责的朋友"或"用随机性对抗完美主义"
-- 对高神经质者：不要建议"管理情绪"，建议"把情绪变成创作素材"
+- 对高神经质者：不要建议"管理情绪"，建议"把情绪变成创作素材"或"建立情绪调节工具箱"
 - 对高开放+低外向者：建议"用写作代替演讲来表达想法"
+- 对高宜人者：建议"练习温和而坚定地说'不'，良好的边界感不会破坏关系"
+- 每一条建议必须能够具体执行，而不是"要找到平衡"这类抽象表述
 
-### 五、发展性视角
-- 这个profile在不同人生阶段（20/30/40岁）会面临什么不同挑战？
-- 存在哪些补偿性发展的可能？
+### 六、发展性视角
+- 这个剖面在20岁、35岁、50岁等不同人生阶段可能会面临什么不同的挑战和红利？
+- 存在哪些补偿性发展的可能？例如：开放性的高峰通常在青少年和中年两个阶段，尽责性随年龄增长自然上升等。
+- 建议来访者在未来3-6个月可以关注的具体成长方向
 
-### 六、一句话总结
-（一句真诚、有力、不煽情的总结，像心理学教授在督导会上的发言）
+### 七、依恋关系速写（新增）
+基于宜人性与神经质的组合，给出1-2句关于关系模式的洞察：
+- 高宜人+高神经质：倾向于焦虑型依恋，需要练习"对方没有回应≠被拒绝"的认知重构
+- 低宜人+低神经质：倾向于回避型依恋，需要练习"表达脆弱不会削弱你的力量"
+- 这部分的语气要尤其温和，因为涉及核心关系安全感
 
-请直接输出报告内容，不要加任何前缀说明。`;
+### 八、一句话总结
+一句真诚、有力、不煽情的总结。应该让来访者感到被深刻地理解，同时也看到一个值得期待的成长方向。像心理学教授在案例督导会上的评语——专业精准、共情而不滥情。
+
+请直接输出报告内容，不要加任何前缀说明。请使用中文撰写，语气专业而不学术、温暖而不煽情。字数控制在2000-3500字为宜。`;
 }
 
 /**
  * Stream AI analysis using OpenAI-compatible API with enhanced prompting.
  */
+const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
+const DEEPSEEK_MODEL = 'deepseek-v4-flash';
+
 export async function streamAIAnalysis(
   scores: DomainScores,
   options: AIStreamOptions
 ): Promise<void> {
-  const { provider, apiKey, baseUrl, corsProxy, onToken, onComplete, onError } = options;
+  const { apiKey, corsProxy, onToken, onComplete, onError } = options;
 
   if (!apiKey) {
     onError(new Error('请先在设置中配置 API Key'));
@@ -207,11 +224,8 @@ export async function streamAIAnalysis(
 
   // Build the API URL, optionally using CORS proxy
   const apiUrl = corsProxy
-    ? `${corsProxy}${encodeURIComponent(`${baseUrl}/chat/completions`)}`
-    : `${baseUrl}/chat/completions`;
-
-  // Select model based on provider
-  const model = provider === 'kimi' ? 'kimi-latest' : 'mimo-v2-pro';
+    ? `${corsProxy}${encodeURIComponent(`${DEEPSEEK_BASE_URL}/chat/completions`)}`
+    : `${DEEPSEEK_BASE_URL}/chat/completions`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -221,16 +235,18 @@ export async function streamAIAnalysis(
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model,
+        model: DEEPSEEK_MODEL,
         messages: [
           {
             role: 'system',
-            content: `你是一位资深临床心理学家，专长大五人格评估。你的报告风格：
+            content: `你是一个对人心有深刻理解的朋友。你的分析风格：
 - 温和而诚实：不美化负面特质，但始终保持尊重
-- 因果导向：不仅描述行为，更分析背后的心理机制
+- 因果导向：不仅描述行为，更分析背后的心理机制——防御机制、适应策略、成长环境
 - 反套路：绝不使用"你是一个有创造力的人"这类空洞描述
 - 具体化：每个判断必须有行为场景支撑
-- 代价-收益：每个特质都标注天赋面和代价面`,
+- 代价-收益：每个特质都标注天赋面和代价面
+- 发展性视角：看到静态分数背后的动态可能
+- 文化敏感性：考虑中国文化背景对人格表达的影响`,
           },
           {
             role: 'user',
@@ -255,13 +271,11 @@ export async function streamAIAnalysis(
 
     const decoder = new TextDecoder();
     let buffer = '';
-    let lastTokenTime = Date.now();
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
-      lastTokenTime = Date.now();
       buffer += decoder.decode(value, { stream: true });
 
       // Process SSE lines

@@ -85,6 +85,20 @@ function getTemplate(
 }
 
 /**
+ * Deterministic index picker: uses score to consistently select one item.
+ * The same score always picks the same item.
+ */
+function pickDeterministic<T>(items: T[], score: number): T {
+  // Distribute score range [0-100] evenly across items
+  const segmentSize = 100 / items.length;
+  const index = Math.min(
+    Math.floor(score / segmentSize),
+    items.length - 1
+  );
+  return items[index];
+}
+
+/**
  * Get facet-specific behavioral details for the primary dimension.
  */
 function getFacetDetails(
@@ -105,9 +119,8 @@ function getFacetDetails(
     if (narrative) {
       const descriptions =
         facetScore >= 50 ? narrative.high : narrative.low;
-      // Pick one random description
-      const picked =
-        descriptions[Math.floor(Math.random() * descriptions.length)];
+      // Deterministic selection based on facet score
+      const picked = pickDeterministic(descriptions, facetScore);
       if (picked) details.push(picked);
     }
   }
@@ -125,7 +138,8 @@ function getStrengthPhrase(dimension: Domain): string {
   const start = dimIndex * 3;
   const phrases = STRENGTH_PHRASES.slice(start, start + 3);
   if (phrases.length === 0) return '';
-  return phrases[Math.floor(Math.random() * phrases.length)];
+  // Use domain score index to pick deterministically
+  return pickDeterministic(phrases, dimIndex * 20 + 50);
 }
 
 /**
@@ -138,5 +152,6 @@ function getGrowthPhrase(dimension: Domain): string {
   const start = dimIndex * 2;
   const phrases = GROWTH_PHRASES.slice(start, start + 2);
   if (phrases.length === 0) return '';
-  return phrases[Math.floor(Math.random() * phrases.length)];
+  // Use dimension position to pick deterministically
+  return pickDeterministic(phrases, dimIndex * 50 + 25);
 }

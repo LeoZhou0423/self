@@ -23,8 +23,7 @@ export function AINarrative({ scores, recordId, savedNarrative, className }: AIN
   const analysis = useMemo(() => analyzeScores(scores), [scores]);
 
   const startStream = useCallback(async () => {
-    const currentApiKey = settings.aiProvider === 'kimi' ? settings.kimiApiKey : settings.mimoApiKey;
-    if (!currentApiKey) {
+    if (!settings.deepseekApiKey) {
       setError('请先在设置中配置 API Key');
       return;
     }
@@ -37,9 +36,7 @@ export function AINarrative({ scores, recordId, savedNarrative, className }: AIN
     let fullContent = '';
 
     await streamAIAnalysis(scores, {
-      provider: settings.aiProvider || 'mimo',
-      apiKey: settings.aiProvider === 'kimi' ? settings.kimiApiKey : settings.mimoApiKey,
-      baseUrl: settings.aiProvider === 'kimi' ? 'https://api.kimi.com/coding/v1' : (settings.mimoBaseUrl || 'https://token-plan-cn.xiaomimimo.com/v1'),
+      apiKey: settings.deepseekApiKey,
       corsProxy: settings.corsProxy || undefined,
       onToken: (token) => {
         fullContent += token;
@@ -58,19 +55,16 @@ export function AINarrative({ scores, recordId, savedNarrative, className }: AIN
         setIsLoading(false);
       },
     });
-  }, [scores, settings.mimoApiKey, settings.mimoBaseUrl, settings.corsProxy, recordId, saveNarrative]);
+  }, [scores, settings.deepseekApiKey, settings.corsProxy, recordId, saveNarrative]);
 
   // 如果有已保存的解读，不自动开始
   useEffect(() => {
-    const currentApiKey = settings.aiProvider === 'kimi' ? settings.kimiApiKey : settings.mimoApiKey;
-    if (currentApiKey && !content && !isLoading && !error && !savedNarrative) {
+    if (settings.deepseekApiKey && !content && !isLoading && !error && !savedNarrative) {
       startStream();
     }
-  }, [settings.aiProvider, settings.mimoApiKey, settings.kimiApiKey, content, isLoading, error, savedNarrative, startStream]);
+  }, [settings.deepseekApiKey, content, isLoading, error, savedNarrative, startStream]);
 
-  const currentApiKey = settings.aiProvider === 'kimi' ? settings.kimiApiKey : settings.mimoApiKey;
-
-  if (!currentApiKey) {
+  if (!settings.deepseekApiKey) {
     return (
       <div className={cn('bauhaus-card-sm p-5 sm:p-6', className)}>
         <p className="font-display text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
@@ -78,7 +72,7 @@ export function AINarrative({ scores, recordId, savedNarrative, className }: AIN
         </p>
         <div className="mt-4 text-center py-8">
           <p className="text-sm text-[var(--text-secondary)]">
-            配置 Mimo API Key 后即可启用 AI 深度解读
+            配置 DeepSeek API Key 后即可启用 AI 深度解读
           </p>
           <p className="mt-2 text-xs text-[var(--text-secondary)]">
             前往 设置 → AI 配置 填写 API Key

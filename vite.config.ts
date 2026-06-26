@@ -4,9 +4,17 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/test/',
+  base: './',
   build: {
     sourcemap: 'hidden',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          pdf: ['jspdf', 'html2canvas'],
+        },
+      },
+    },
   },
   server: {
     watch: {

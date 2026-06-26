@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Check, AlertTriangle } from 'lucide-react';
 import type { Archetype } from '@/data/archetypes';
 import { StreamingText } from './StreamingText';
@@ -10,6 +10,7 @@ interface ArchetypeCardProps {
 
 export function ArchetypeCard({ archetype, className = '' }: ArchetypeCardProps) {
   const [showDetails, setShowDetails] = useState(false);
+  const handleStreamComplete = useCallback(() => setShowDetails(true), []);
 
   return (
     <div className={`bauhaus-card overflow-hidden animate-fade-in-up ${className}`}>
@@ -32,7 +33,7 @@ export function ArchetypeCard({ archetype, className = '' }: ArchetypeCardProps)
           <StreamingText
             text={archetype.description}
             speed={20}
-            onComplete={() => setShowDetails(true)}
+            onComplete={handleStreamComplete}
           />
         </p>
 

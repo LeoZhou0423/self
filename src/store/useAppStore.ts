@@ -13,10 +13,7 @@ export interface TestRecord {
 export interface AppSettings {
   darkMode: boolean;
   fontSize: 'small' | 'medium' | 'large';
-  aiProvider: 'mimo' | 'kimi';
-  mimoApiKey: string;
-  mimoBaseUrl: string;
-  kimiApiKey: string;
+  deepseekApiKey: string;
   corsProxy: string;
 }
 
@@ -32,9 +29,10 @@ interface AppState {
   clearHistory: () => void;
   updateSettings: (settings: Partial<AppSettings>) => void;
   saveNarrative: (id: string, narrative: string) => void;
+  importData: (data: { history?: TestRecord[]; settings?: Partial<AppSettings> }) => void;
 }
 
-const STORAGE_KEY = 'big-five-test-storage';
+const STORAGE_KEY = 'self-explore-storage';
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -48,10 +46,7 @@ export const useAppStore = create<AppState>()(
       settings: {
         darkMode: false,
         fontSize: 'medium',
-        aiProvider: 'mimo',
-        mimoApiKey: '',
-        mimoBaseUrl: 'https://token-plan-cn.xiaomimimo.com/v1',
-        kimiApiKey: '',
+        deepseekApiKey: '',
         corsProxy: '',
       },
 
@@ -84,6 +79,25 @@ export const useAppStore = create<AppState>()(
         })),
 
       clearHistory: () => set({ history: [] }),
+
+      importData: (data: { history?: TestRecord[]; settings?: Partial<AppSettings> }) => {
+        set((state) => {
+          const mergedHistory = data.history
+            ? [
+                ...data.history.filter(
+                  (r) => !state.history.some((existing) => existing.id === r.id)
+                ),
+                ...state.history,
+              ]
+            : state.history;
+          return {
+            history: mergedHistory,
+            settings: data.settings
+              ? { ...state.settings, ...data.settings }
+              : state.settings,
+          };
+        });
+      },
 
       updateSettings: (settings) =>
         set((state) => ({
