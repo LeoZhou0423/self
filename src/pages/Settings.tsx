@@ -1,22 +1,15 @@
 import { useState, useRef, useCallback } from 'react';
-import { Moon, Sun, Type, Download, Trash2, Key, Eye, EyeOff, Upload, RotateCcw, Globe } from 'lucide-react';
+import { Moon, Sun, Type, Download, Trash2, Upload, RotateCcw } from 'lucide-react';
 import { useAppStore, type TestRecord } from '@/store/useAppStore';
 import { exportDataToJSON } from '@/utils/export';
 
 export function Settings() {
   const { settings, updateSettings, history, clearHistory, importData } = useAppStore();
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [proxyUrlInput, setProxyUrlInput] = useState(settings.proxyUrl);
-  const [apiKeyInput, setApiKeyInput] = useState(settings.deepseekApiKey);
-  const [corsProxyInput, setCorsProxyInput] = useState(settings.corsProxy);
-  const [showLocalFallback, setShowLocalFallback] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState(false);
   const [clearConfirm, setClearConfirm] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const hasBuiltinKey = typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEEPSEEK_API_KEY as string;
 
   const handleExportData = () => {
     exportDataToJSON(
@@ -62,16 +55,7 @@ export function Settings() {
   }, [importData]);
 
   const handleResetDefaults = () => {
-    updateSettings({
-      darkMode: false,
-      fontSize: 'medium',
-      proxyUrl: '',
-      deepseekApiKey: '',
-      corsProxy: '',
-    });
-    setProxyUrlInput('');
-    setApiKeyInput('');
-    setCorsProxyInput('');
+    updateSettings({ darkMode: false, fontSize: 'medium' });
     setResetConfirm(false);
   };
 
@@ -168,107 +152,6 @@ export function Settings() {
                 >
                   重置
                 </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* AI API Configuration */}
-        <section className="mt-8">
-          <h2 className="font-display text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-            AI 配置
-          </h2>
-          <div className="mt-4 bauhaus-card-sm p-5 sm:p-6">
-            <div className="flex items-start gap-3">
-              <Globe size={18} className="mt-0.5 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm sm:text-base">Worker 代理（推荐）</p>
-                <p className="text-xs text-[var(--text-secondary)]">
-                  API Key 存储在服务端，不暴露给浏览器
-                </p>
-                <div className="mt-2 flex gap-2">
-                  <input
-                    type="text"
-                    value={proxyUrlInput}
-                    onChange={(e) => setProxyUrlInput(e.target.value)}
-                    placeholder="https://self-ai-proxy.你的用户名.workers.dev"
-                    className="flex-1 border-2 border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2 text-xs sm:text-sm"
-                  />
-                  <button
-                    onClick={() => updateSettings({ proxyUrl: proxyUrlInput })}
-                    className="bauhaus-btn-secondary px-3 py-2 text-xs sm:px-4 sm:text-sm"
-                  >
-                    保存
-                  </button>
-                </div>
-
-                {/* Local dev fallback — collapsed by default */}
-                <button
-                  onClick={() => setShowLocalFallback(!showLocalFallback)}
-                  className="mt-3 flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                >
-                  <Key size={12} />
-                  {showLocalFallback ? '收起本地开发备用配置' : '本地开发备用（API Key 直连）'}
-                </button>
-
-                {showLocalFallback && (
-                  <div className="mt-3 p-3 border-2 border-dashed border-[var(--border-color)]">
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <input
-                          type={showApiKey ? 'text' : 'password'}
-                          value={apiKeyInput}
-                          onChange={(e) => setApiKeyInput(e.target.value)}
-                          placeholder="输入 DeepSeek API Key"
-                          className="w-full border-2 border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2 pr-10 text-xs sm:text-sm"
-                        />
-                        <button
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                        >
-                          {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                      <button
-                        onClick={() => updateSettings({ deepseekApiKey: apiKeyInput })}
-                        className="bauhaus-btn-secondary px-3 py-2 text-xs sm:px-4 sm:text-sm"
-                      >
-                        保存
-                      </button>
-                    </div>
-                    <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                      API Key 仅保存在内存中，刷新页面后需重新输入
-                    </p>
-                  </div>
-                )}
-
-                <div className="mt-4">
-                  <p className="text-xs text-[var(--text-secondary)]">CORS 代理（解决跨域问题）</p>
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      type="text"
-                      value={corsProxyInput}
-                      onChange={(e) => setCorsProxyInput(e.target.value)}
-                      placeholder="https://corsproxy.io/?"
-                      className="flex-1 border-2 border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2 text-xs sm:text-sm"
-                    />
-                    <button
-                      onClick={() => updateSettings({ corsProxy: corsProxyInput })}
-                      className="bauhaus-btn-secondary px-3 py-2 text-xs sm:px-4 sm:text-sm"
-                    >
-                      保存
-                    </button>
-                  </div>
-                </div>
-
-                {(settings.proxyUrl || settings.deepseekApiKey || hasBuiltinKey) && (
-                  <p className="mt-3 text-xs text-emerald-600">
-                    ✓ AI 服务已配置
-                    {hasBuiltinKey && !settings.proxyUrl && !settings.deepseekApiKey
-                      ? '（内建 API Key，开箱即用）'
-                      : ''}
-                  </p>
-                )}
               </div>
             </div>
           </div>

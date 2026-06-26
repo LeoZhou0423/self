@@ -22,18 +22,7 @@ export function AINarrative({ scores, recordId, savedNarrative, className }: AIN
 
   const analysis = useMemo(() => analyzeScores(scores), [scores]);
 
-  const BUILTIN_KEY = typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEEPSEEK_API_KEY
-    ? (import.meta.env.VITE_DEEPSEEK_API_KEY as string)
-    : '';
-
-  const isConfigured = !!(settings.proxyUrl || settings.deepseekApiKey || BUILTIN_KEY);
-
   const startStream = useCallback(async () => {
-    if (!isConfigured) {
-      setError('请先在设置中配置 AI');
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
     setContent('');
@@ -62,32 +51,14 @@ export function AINarrative({ scores, recordId, savedNarrative, className }: AIN
         setIsLoading(false);
       },
     });
-  }, [scores, settings.proxyUrl, settings.deepseekApiKey, settings.corsProxy, recordId, saveNarrative, isConfigured]);
+  }, [scores, settings.proxyUrl, settings.deepseekApiKey, settings.corsProxy, recordId, saveNarrative]);
 
   // 如果有已保存的解读，不自动开始
   useEffect(() => {
-    if (isConfigured && !content && !isLoading && !error && !savedNarrative) {
+    if (!content && !isLoading && !error && !savedNarrative) {
       startStream();
     }
-  }, [isConfigured, content, isLoading, error, savedNarrative, startStream]);
-
-  if (!isConfigured) {
-    return (
-      <div className={cn('bauhaus-card-sm p-5 sm:p-6', className)}>
-        <p className="font-display text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-          AI 深度解读
-        </p>
-        <div className="mt-4 text-center py-8">
-          <p className="text-sm text-[var(--text-secondary)]">
-            配置 AI 服务后即可启用深度解读
-          </p>
-          <p className="mt-2 text-xs text-[var(--text-secondary)]">
-            推荐：设置 → AI 配置 → Worker URL（API Key 存储在服务端）
-          </p>
-        </div>
-      </div>
-    );
-  }
+  }, [content, isLoading, error, savedNarrative, startStream]);
 
   return (
     <div className={cn('bauhaus-card-sm p-5 sm:p-6', className)}>
