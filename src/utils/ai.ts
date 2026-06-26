@@ -106,26 +106,11 @@ function buildPrompt(scores: DomainScores, analysis: ScoreAnalysis): string {
     .map((d) => {
       const name = domainNames[d.domain];
       if (d.level === 'very_high') {
-        return `- ${name}(${d.score})：极高分，需考虑是否存在社会期许效应或当前情绪状态影响`;
+        return `- ${name}(${d.score})：极高分，需考虑是否存在当前情绪状态影响`;
       }
       return `- ${name}(${d.score})：极低分，需考虑是否存在作答偏差或特殊情境因素`;
     })
     .join('\n');
-
-  // Social desirability warning
-  let sdWarning = '';
-  if (scores.socialDesirability >= 70) {
-    sdWarning = `\n## ⚠️ 作答可信度警告
-您的社会期许得分为${scores.socialDesirability}/100，表明作答时可能有"表现理想自我"的倾向。具体表现：
-- 您在"我从不说谎""我总是信守承诺"等题目上选择了较高分值
-- 这可能导致您的其他人格分数偏离真实状态
-- 建议：请在放松状态下重新作答，如实回答而非"应该怎样"
-
-在撰写报告时，请注意：
-1. 您的宜人性、尽责性分数可能被高估
-2. 您的神经质分数可能被低估
-3. 请在报告开头温和地提醒用户注意这一偏差`;
-  }
 
   return `你是一个对人心有深刻理解的朋友，善于观察和分析人的性格。你正在为一位朋友写一份真诚、有温度的分析。
 
@@ -148,7 +133,6 @@ ${facetLines}
 
 ## 统计学注意事项
 ${extremeWarnings || '所有维度分数均在正常范围内，无需特别的信度提示。'}
-${sdWarning}
 
 ## 报告结构要求
 

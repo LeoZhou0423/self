@@ -6,7 +6,6 @@ import {
   QUESTIONS_DEPRESSION,
   QUESTIONS_ANXIETY,
   QUESTIONS_SLEEP,
-  LIE_SCALE_QUESTIONS,
   type Domain,
 } from '@/data/questions';
 
@@ -20,7 +19,6 @@ export interface DomainScores {
   extraversion: number;
   agreeableness: number;
   neuroticism: number;
-  socialDesirability: number;
   subDimensions: SubDimensionScores;
 
   // ── 新模块 ──
@@ -38,7 +36,7 @@ export interface DomainScores {
   sleepQuality: number;
 }
 
-const DOMAIN_KEYS: Record<Domain, keyof Omit<DomainScores, 'subDimensions' | 'socialDesirability' | 'selfEsteem' | 'attachmentAnxiety' | 'attachmentAvoidance' | 'depressionScore' | 'anxietyScore' | 'sleepQuality'>> = {
+const DOMAIN_KEYS: Record<Domain, keyof Omit<DomainScores, 'subDimensions' | 'selfEsteem' | 'attachmentAnxiety' | 'attachmentAvoidance' | 'depressionScore' | 'anxietyScore' | 'sleepQuality'>> = {
   O: 'openness',
   C: 'conscientiousness',
   E: 'extraversion',
@@ -72,7 +70,6 @@ export function calculateScores(answers: Record<number, number>): DomainScores {
     extraversion: 0,
     agreeableness: 0,
     neuroticism: 0,
-    socialDesirability: 0,
     subDimensions: {},
     selfEsteem: 0,
     attachmentAnxiety: 0,
@@ -85,7 +82,7 @@ export function calculateScores(answers: Record<number, number>): DomainScores {
   // BFI-2 主维度
   for (const domain of Object.keys(DOMAINS) as Domain[]) {
     const total = domainTotals[domain];
-    scores[DOMAIN_KEYS[domain]] = Math.round((total / 60) * 100);
+    scores[DOMAIN_KEYS[domain]] = Math.round((total / 30) * 100);
   }
 
   // BFI-2 子维度
@@ -95,22 +92,7 @@ export function calculateScores(answers: Record<number, number>): DomainScores {
     scores.subDimensions[facetKey] = Math.round((total / (count * 5)) * 100);
   }
 
-  // ── 社会期许 ──
-  let lieTotal = 0;
-  let lieCount = 0;
-  for (const q of LIE_SCALE_QUESTIONS) {
-    const answer = answers[q.id];
-    if (answer === undefined) continue;
-    const score = rawScore(answer, q.reverse);
-    lieTotal += score;
-    lieCount++;
-  }
-  if (lieCount > 0) {
-    const lieAvg = lieTotal / lieCount;
-    scores.socialDesirability = Math.round(((lieAvg - 1) / 4) * 100);
-  }
-
-  // ── 自我价值感（Rosenberg）─ 8 题，1-5 分 ──
+  // ── 自我价值感 ──
   let seSum = 0;
   let seCount = 0;
   for (const q of QUESTIONS_SELF_ESTEEM) {
